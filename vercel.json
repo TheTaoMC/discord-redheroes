@@ -1,0 +1,3 @@
+{
+  "routes": [{ "src": "/status", "dest": "/index.js" }]
+}
