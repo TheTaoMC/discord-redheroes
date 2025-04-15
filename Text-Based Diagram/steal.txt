@@ -1,0 +1,28 @@
+user1> input steal @user2
+
+    เรียกใช้ไฟล์ ../utils/offensive.js
+    ตรวจสอบ user1 มี name_system = stealx2 ถ้ามีให้ใช้ 1 อัน
+
+    ตรวจสอบไอเทมของ user2 ที่เป็น defensive, auto_use = Y
+    เรียกใช้ไฟล์ ../utils/defensive.js
+    
+    ถ้า user2 ไม่มีไอเทม defensive ให้ user1 สามารถ Steal ได้เลย
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    โดยใน defensive.js เริ่มจาก ถ้า name_system = lock ให้ user1 ไม่สามารถ Steal ได้ และ karma -5 ด้วย
+    แต่ถ้า user1 มี name_system = stealx2 user1 จะโดนหักไอเทม stealx2 -1 ด้วย
+
+

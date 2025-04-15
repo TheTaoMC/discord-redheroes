@@ -1,0 +1,75 @@
+<mxfile>
+  <diagram name="RedHeroes Flowchart">
+    <mxGraphModel dx="1000" dy="1000" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0">
+      <root>
+        <!-- Root Node -->
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+
+        <!-- Core System -->
+        <mxCell id="coreSystem" value="Core System" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="50" width="150" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Commands -->
+        <mxCell id="commands" value="Commands" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="50" width="150" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Utilities -->
+        <mxCell id="utils" value="Utilities" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="200" width="150" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Events & Effects -->
+        <mxCell id="eventsEffects" value="Events &amp; Effects" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="200" width="150" height="50" as="geometry" />
+        </mxCell>
+
+        <!-- Core System - index.js -->
+        <mxCell id="indexJs" value="index.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="110" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="indexJsEdge" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="coreSystem" target="indexJs">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Commands - List -->
+        <mxCell id="stealCmd" value="steal.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="110" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="helpCmd" value="help.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="150" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="dailyCmd" value="daily.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="190" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="commandsEdge" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="commands" target="stealCmd">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Utilities - List -->
+        <mxCell id="walletUtil" value="wallet.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="260" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="databaseUtil" value="database.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="50" y="300" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="utilsEdge" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="utils" target="walletUtil">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+
+        <!-- Events & Effects - List -->
+        <mxCell id="beforeStealEvent" value="beforeSteal.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="260" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="lockEffect" value="lockEffect.js" style="rounded=1;whiteSpace=wrap;html=1;" vertex="1" parent="1">
+          <mxGeometry x="300" y="300" width="150" height="30" as="geometry" />
+        </mxCell>
+        <mxCell id="eventsEffectsEdge" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;html=1;" edge="1" parent="1" source="eventsEffects" target="beforeStealEvent">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

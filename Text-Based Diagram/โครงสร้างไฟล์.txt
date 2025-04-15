@@ -1,0 +1,33 @@
+/redheroes/
+  ├── index.js (Main File)
+  ├── commands/ (คำสั่งหลักของบอท)
+  │   ├── work.js       (ทำงาน)
+  │   ├── answer.js     (ตอบคำถามจากงาน)
+  │   ├── steal.js      (ขโมย)
+  │   ├── transfer.js   (โอนเงิน)
+  │   ├── top.js        (ดูสำดับ)
+  │   ├── inventory.js  (ดูกระเป๋า)
+  │   ├── daily.js      (รับเงินรายวัน)
+  │   ├── shop.js       (ร้านค้า)
+  │   ├── buy.js        (ซื้อของ)
+  │   ├── setroom.js    (ตั้งค่าห้องที่บอทจะทำงาน)
+  │   ├── listroom.js   (รายชื่อห้องที่บอทจะทำงาน)
+  │   ├── delroom.js    (ลบห้องที่บอททำงาน)
+  │   ├── help.js       (ช่วยเหลือ)
+  │   └── version.js    (เวอร์ชั่น)
+  ├── utils/ (Utility Functions)
+  │   ├── wallet.js (จัดการเงินและ Karma)
+  │   └── database.js (จัดการฐานข้อมูล)
+  │       └── user
+  │       └── item
+  │       └── room
+  │   └── logger.js (บันทึก Log)
+  ├── effects/ (Effect ของไอเท็ม)
+  │   ├── lockEffect.js
+  │   ├── stealx2Effect.js
+  │   └── karmaBoostEffect.js
+  ├── events/ (Event Handlers)
+  │   ├── beforeSteal.js
+  │   ├── duringSteal.js
+  │   └── afterSteal.js
+  └── config.js (ตั้งค่าระบบ)
