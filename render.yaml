@@ -1,6 +1,6 @@
 services:
   - type: worker
-    name: discord-wallet-bot
+    name: discord-redheroes
     env: node
     buildCommand: "npm install"
     startCommand: "node index.js"
