@@ -23,7 +23,7 @@ module.exports = {
     }
 
     // Fetch user data from the database
-    const userRow = await getUserData(db, userId, message);
+    const userRow = await getUserData(db, userId);
 
     // Check Karma penalties
     const karma = userRow.karma || 0;
@@ -110,10 +110,9 @@ module.exports = {
         reward *= Math.random() < 0.6 ? 3 : 2; // 70% for *2 or 60% for *3
       }
 
-      const username = message.author.globalName || message.author.username;
       db.run(
-        "UPDATE users SET balance = balance + ?, karma = karma + 1, username = ? WHERE user_id = ?",
-        [reward, username, userId]
+        "UPDATE users SET balance = balance + ?, karma = karma + 1 WHERE user_id = ?",
+        [reward, userId]
       );
     }
 
@@ -154,30 +153,14 @@ async function getWorkTask(db, roomId) {
 }
 
 // Helper function to fetch user data
-async function getUserData(db, userId, message) {
+async function getUserData(db, userId) {
   return new Promise((resolve, reject) => {
     db.get("SELECT * FROM users WHERE user_id = ?", [userId], (err, row) => {
       if (err) {
         console.error("❌ Error fetching user data:", err.message);
         reject(err);
       }
-
-      if (!row) {
-        const username = message.author.globalName || message.author.username;
-        db.run(
-          "INSERT INTO users (user_id, username, balance, karma) VALUES (?, ?, 0, 0)",
-          [userId, username],
-          (err) => {
-            if (err) {
-              console.error("❌ Error creating user:", err.message);
-              reject(err);
-            }
-            resolve({ balance: 0, karma: 0, username });
-          }
-        );
-      } else {
-        resolve(row);
-      }
+      resolve(row || { balance: 0, karma: 0 });
     });
   });
 }

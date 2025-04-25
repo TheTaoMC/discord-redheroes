@@ -22,10 +22,13 @@ module.exports = {
       return message.reply("❌ ห้องนี้ไม่ใช่ Text Channel!");
     }
 
-    // ตรวจสอบว่า room_id มีอยู่ในฐานข้อมูลแล้วหรือไม่
+    // รับ Guild ID ของเซิร์ฟเวอร์
+    const guildId = message.guild.id;
+
+    // ตรวจสอบว่า room_id และ guild_id มีอยู่ในฐานข้อมูลแล้วหรือไม่
     db.get(
-      "SELECT * FROM rooms WHERE room_id = ?",
-      [roomId],
+      "SELECT * FROM rooms WHERE room_id = ? AND guild_id = ?",
+      [roomId, guildId],
       async (err, row) => {
         if (err) {
           console.error("❌ Error checking room:", err.message);
@@ -36,15 +39,15 @@ module.exports = {
           if (row) {
             // อัพเดทข้อมูลห้องในฐานข้อมูล
             await db.run(
-              "UPDATE rooms SET room_name = ?, updated_at = CURRENT_TIMESTAMP WHERE room_id = ?",
-              [room.name, roomId]
+              "UPDATE rooms SET room_name = ?, updated_at = CURRENT_TIMESTAMP WHERE room_id = ? AND guild_id = ?",
+              [room.name, roomId, guildId]
             );
             message.reply(`✅ อัพเดทห้อง ${room.name} (${roomId}) สำเร็จ!`);
           } else {
             // เพิ่มห้องใหม่ในฐานข้อมูล
             await db.run(
-              "INSERT INTO rooms (room_id, room_name, created_at) VALUES (?, ?, CURRENT_TIMESTAMP)",
-              [roomId, room.name]
+              "INSERT INTO rooms (room_id, guild_id, room_name, created_at) VALUES (?, ?, ?, CURRENT_TIMESTAMP)",
+              [roomId, guildId, room.name]
             );
             message.reply(
               `✅ เพิ่มห้อง ${room.name} (${roomId}) ลงในฐานข้อมูลสำเร็จ!`

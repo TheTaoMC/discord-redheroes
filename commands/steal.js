@@ -20,17 +20,25 @@ module.exports = {
       return message.reply("❌ คุณไม่สามารถขโมยจากตัวเองได้!");
     }
 
+    // Ensure both users exist in the database
+    await ensureUserData(db, userId, message.author.username);
+    await ensureUserData(db, targetUserId, targetUser.username);
+
     // Fetch user data from the database
     const userRow = await getUserData(db, userId);
     const targetRow = await getUserData(db, targetUserId);
 
     // Check daily steal limit
-    const today = new Date().toISOString().split("T")[0]; // Format: YYYY-MM-DD
+    const today = new Date().toISOString().split("T")[0];
     const dailyStealKey = `daily_steal_${userId}_${today}`;
-    const dailyStealCount = await getDailyStealCount(db, dailyStealKey);
-
-    if (dailyStealCount >= 10) {
+    const canSteal = await updateDailyStealCount(db, dailyStealKey);
+    if (!canSteal) {
       return message.reply("❌ คุณขโมยครบ 5 ครั้งแล้ววันนี้!");
+    }
+
+    // Check if target has any money to steal
+    if (targetRow.balance <= 0) {
+      return message.reply("❌ เป้าหมายไม่มีเงินให้ขโมยแล้ว!");
     }
 
     // Apply offensive item effects and deduct items
@@ -39,7 +47,6 @@ module.exports = {
     const hasOffensiveEffect = await applyOffensiveEffectsAndDeduct(
       db,
       userId,
-      message,
       {
         onBoostChance: (value) => (stealChance += value),
         onStealMultiplier: (value) => (stealMultiplier *= value),
@@ -54,8 +61,42 @@ module.exports = {
       message
     );
     if (hasDefensiveEffect) {
+      // Deduct karma even if blocked by defensive item
+      await db.run("UPDATE users SET karma = karma - 5 WHERE user_id = ?", [
+        userId,
+      ]);
+
+      const embed = new EmbedBuilder()
+        .setTitle("💰 ผลการขโมย")
+        .setDescription("❌ การขโมยถูกป้องกัน!")
+        .addFields(
+          {
+            name: "เป้าหมาย",
+            value: `${targetUser.username}`,
+            inline: true,
+          },
+          {
+            name: "ผลลัพธ์",
+            value: "คุณไม่สามารถขโมยได้เนื่องจากเป้าหมายมีไอเท็มป้องกัน!",
+            inline: true,
+          },
+          {
+            name: "Karma",
+            value: `คะแนน Karma ของคุณลดลง \`-5\``,
+            inline: false,
+          }
+        )
+        .setColor("#E74C3C")
+        .setTimestamp();
+
+      await message.channel.send({ embeds: [embed] });
       return;
     }
+
+    // Deduct karma for attempting to steal (moved here)
+    await db.run("UPDATE users SET karma = karma - 5 WHERE user_id = ?", [
+      userId,
+    ]);
 
     // Clamp steal chance between 0 and 1
     stealChance = Math.max(0, Math.min(1, stealChance));
@@ -63,26 +104,55 @@ module.exports = {
     // Steal process
     const isSuccess = Math.random() < stealChance; // Chance to steal
     let stolenAmount = 0;
+    let penalty = 0;
 
     if (isSuccess) {
       const maxSteal = Math.floor(targetRow.balance * 0.3); // Max 30% of target's balance
       stolenAmount = Math.floor(Math.random() * maxSteal) + 1; // Random 1-30%
+
+      // Adjust reward based on Karma
+      const karma = userRow.karma || 0;
+      if (karma < 0) {
+        stealMultiplier += 0.1; // +10%
+      }
+      if (karma < -10) {
+        stealMultiplier += 0.1; // +20% total
+        if (Math.random() < 0.2) penalty = 200; // 20% chance to lose 200
+      }
+      if (karma < -15) {
+        stealMultiplier += 0.1; // +30% total
+        if (Math.random() < 0.25) penalty = 500; // 25% chance to lose 500
+      }
+      if (karma < -20) {
+        stealMultiplier += 0.1; // +40% total
+        if (Math.random() < 0.25) penalty = 800; // 25% chance to lose 800
+      }
+      if (karma < -25) {
+        stealMultiplier += 0.1; // +50% total
+        if (Math.random() < 0.3) penalty = 1000; // 30% chance to lose 1000
+      }
+
       stolenAmount = Math.floor(stolenAmount * stealMultiplier); // Apply multiplier
+
+      // Update thief's data
       db.run("UPDATE users SET balance = balance + ? WHERE user_id = ?", [
         stolenAmount,
         userId,
       ]);
+
+      // Update victim's data
       db.run("UPDATE users SET balance = balance - ? WHERE user_id = ?", [
         stolenAmount,
         targetUserId,
       ]);
+
+      if (penalty > 0) {
+        db.run("UPDATE users SET balance = balance - ? WHERE user_id = ?", [
+          penalty,
+          userId,
+        ]);
+      }
     }
-
-    // Deduct karma for attempting to steal
-    db.run("UPDATE users SET karma = karma - 5 WHERE user_id = ?", [userId]);
-
-    // Update daily steal count
-    updateDailyStealCount(db, dailyStealKey);
 
     // Notify the result
     const embed = new EmbedBuilder()
@@ -97,7 +167,9 @@ module.exports = {
         {
           name: "ผลลัพธ์",
           value: isSuccess
-            ? `คุณขโมยได้ \`${stolenAmount}\` บาท`
+            ? `คุณขโมยได้ \`${stolenAmount}\` บาท${
+                penalty > 0 ? ` (แต่เสียค่าปรับ ${penalty} บาท)` : ""
+              }`
             : "คุณไม่ได้อะไรเลย!",
           inline: true,
         },
@@ -114,13 +186,48 @@ module.exports = {
   },
 };
 
+// Helper function to ensure user data exists in the database
+async function ensureUserData(db, userId, username) {
+  return new Promise((resolve, reject) => {
+    db.get("SELECT * FROM users WHERE user_id = ?", [userId], (err, row) => {
+      if (err) {
+        console.error("❌ Error fetching user data:", err.message);
+        return reject(err);
+      }
+
+      if (!row) {
+        // กรณีสร้างข้อมูลใหม่
+        db.run(
+          "INSERT INTO users (user_id, username, balance, karma) VALUES (?, ?, ?, ?)",
+          [userId, username, 0, 0],
+          (insertErr) => {
+            if (insertErr) {
+              console.error("❌ Error inserting user data:", insertErr.message);
+              return reject(insertErr);
+            }
+            resolve();
+          }
+        );
+      } else {
+        // อัพเดท username ทุกครั้งที่มีการเรียกใช้
+        db.run(
+          "UPDATE users SET username = ? WHERE user_id = ?",
+          [username, userId],
+          (updateErr) => {
+            if (updateErr) {
+              console.error("❌ Error updating username:", updateErr.message);
+              return reject(updateErr);
+            }
+            resolve();
+          }
+        );
+      }
+    });
+  });
+}
+
 // Helper function to apply offensive item effects and deduct items
-async function applyOffensiveEffectsAndDeduct(
-  db,
-  userId,
-  message,
-  handlers = {}
-) {
+async function applyOffensiveEffectsAndDeduct(db, userId, handlers = {}) {
   const items = await getUserItems(db, userId, "offensive");
   let hasEffect = false;
 
@@ -211,10 +318,10 @@ async function applyItemEffectsAndDeduct(
         );
 
         // Notify the user about the effect
-        if (type === "defensive") {
-          //message.reply(`🔒 ${message.author.username} มีไอเท็มป้องกันการขโมย!`);
-          message.reply(`🔒 กระเป๋าล็อค !!!`);
-        }
+        /*         if (type === "defensive" && message) {
+          await message.channel.send(`🔒 กระเป๋าล็อค !!!`);
+          console.log(`🔒 กระเป๋าล็อค !!!`);
+        } */
       } catch (err) {
         console.error(
           `❌ Error loading effect for item ${item.name}:`,
@@ -279,13 +386,40 @@ function getDailyStealCount(db, key) {
 }
 
 function updateDailyStealCount(db, key) {
-  db.run(
-    "INSERT OR REPLACE INTO daily_steal (key, value) VALUES (?, COALESCE((SELECT value FROM daily_steal WHERE key = ?), 0) + 1)",
-    [key, key],
-    (err) => {
-      if (err) {
-        console.error("❌ Error updating daily steal count:", err.message);
-      }
-    }
-  );
+  return new Promise((resolve, reject) => {
+    db.serialize(() => {
+      db.run("BEGIN TRANSACTION");
+
+      db.get(
+        "SELECT value FROM daily_steal WHERE key = ?",
+        [key],
+        (err, row) => {
+          if (err) {
+            db.run("ROLLBACK");
+            return reject(err);
+          }
+
+          const currentCount = row ? parseInt(row.value) : 0;
+
+          if (currentCount >= 5) {
+            db.run("ROLLBACK");
+            return resolve(false);
+          }
+
+          db.run(
+            "INSERT OR REPLACE INTO daily_steal (key, value) VALUES (?, ?)",
+            [key, currentCount + 1],
+            (err) => {
+              if (err) {
+                db.run("ROLLBACK");
+                return reject(err);
+              }
+              db.run("COMMIT");
+              resolve(true);
+            }
+          );
+        }
+      );
+    });
+  });
 }

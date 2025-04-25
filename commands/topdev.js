@@ -1,7 +1,7 @@
 const { EmbedBuilder } = require("discord.js");
 
 module.exports = {
-  name: "top",
+  name: "topdev",
   description: "แสดงรายชื่อผู้มีเงินและ Karma สูงสุด 3 อันดับแรก",
   async execute(message, args, { client, db }) {
     // Fetch top 3 users by balance
@@ -14,12 +14,19 @@ module.exports = {
           return message.reply("❌ เกิดข้อผิดพลาดขณะดึงข้อมูล!");
         }
 
-        // Fetch user data for balance rows
+        // Get Discord user info for balance rows
         for (const row of balanceRows) {
           try {
             const user = await client.users.fetch(row.user_id);
-            row.displayName = user.globalName || user.username;
+            row.nickname =
+              message.guild.members.cache.get(row.user_id)?.nickname ||
+              "ไม่มีชื่อในเซิร์ฟเวอร์";
+            row.displayName = user.displayName || "ไม่มีชื่อที่แสดง";
+            row.globalName = user.globalName || "ไม่มีชื่อสากล";
+            row.username = user.username || "ไม่มี username";
+            row.tag = user.tag || "ไม่มีแท็ก";
           } catch (error) {
+            console.error(`Error fetching user ${row.user_id}:`, error);
             row.displayName = row.username;
           }
         }
@@ -34,12 +41,19 @@ module.exports = {
               return message.reply("❌ เกิดข้อผิดพลาดขณะดึงข้อมูล!");
             }
 
-            // Fetch user data for karma rows
+            // Get Discord user info for karma rows
             for (const row of karmaRows) {
               try {
                 const user = await client.users.fetch(row.user_id);
-                row.displayName = user.globalName || user.username;
+                row.nickname =
+                  message.guild.members.cache.get(row.user_id)?.nickname ||
+                  "ไม่มีชื่อในเซิร์ฟเวอร์";
+                row.displayName = user.displayName || "ไม่มีชื่อที่แสดง";
+                row.globalName = user.globalName || "ไม่มีชื่อสากล";
+                row.username = user.username || "ไม่มี username";
+                row.tag = user.tag || "ไม่มีแท็ก";
               } catch (error) {
+                console.error(`Error fetching user ${row.user_id}:`, error);
                 row.displayName = row.username;
               }
             }
@@ -55,9 +69,16 @@ module.exports = {
                     balanceRows.length > 0
                       ? balanceRows
                           .map(
-                            (row, index) => `#${index + 1} ${row.displayName}`
+                            (row, index) =>
+                              `#${index + 1}\n` +
+                              `👤 ชื่อในเซิร์ฟเวอร์: ${row.nickname}\n` +
+                              `📝 ชื่อที่แสดง: ${row.displayName}\n` +
+                              `🌐 ชื่อสากล: ${row.globalName}\n` +
+                              `🏷️ Username: ${row.username}\n` +
+                              `🔖 แท็ก: ${row.tag}\n` +
+                              `💵 เงิน: ${row.balance.toLocaleString()} บาท`
                           )
-                          .join("\n")
+                          .join("\n\n")
                       : "ไม่มีข้อมูลผู้ใช้งาน",
                   inline: false,
                 },
@@ -67,9 +88,16 @@ module.exports = {
                     karmaRows.length > 0
                       ? karmaRows
                           .map(
-                            (row, index) => `#${index + 1} ${row.displayName}`
+                            (row, index) =>
+                              `#${index + 1}\n` +
+                              `👤 ชื่อในเซิร์ฟเวอร์: ${row.nickname}\n` +
+                              `📝 ชื่อที่แสดง: ${row.displayName}\n` +
+                              `🌐 ชื่อสากล: ${row.globalName}\n` +
+                              `🏷️ Username: ${row.username}\n` +
+                              `🔖 แท็ก: ${row.tag}\n` +
+                              `🌟 Karma: ${row.karma}`
                           )
-                          .join("\n")
+                          .join("\n\n")
                       : "ไม่มีข้อมูลผู้ใช้งาน",
                   inline: false,
                 }
@@ -77,7 +105,6 @@ module.exports = {
               .setColor("#FFD700")
               .setTimestamp();
 
-            // Send the embed message
             message.channel.send({ embeds: [embed] });
           }
         );
